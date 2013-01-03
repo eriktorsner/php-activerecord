@@ -335,12 +335,21 @@ class Model
 
 	/**
 	 * Determines if an attribute exists for this {@link Model}.
+	 * ETO: modified see: https://github.com/kla/php-activerecord/issues/156
 	 *
 	 * @param string $attribute_name
 	 * @return boolean
 	 */
 	public function __isset($attribute_name)
 	{
+        // check for getter
+        if (method_exists($this, "get_$attribute_name"))
+        {
+            $fname = "get_$attribute_name";
+            $value = $this->$fname();
+            return $value;
+        }
+
 		return array_key_exists($attribute_name,$this->attributes) || array_key_exists($attribute_name,static::$alias_attribute);
 	}
 
@@ -1563,6 +1572,7 @@ class Model
 		if ($num_args > 0 && !isset($options['conditions']))
 			return static::find_by_pk($args, $options);
 
+		$single = false;
 		$options['mapped_names'] = static::$alias_attribute;
 		$list = static::table()->find($options);
 
@@ -1593,11 +1603,12 @@ class Model
 				if (!is_array($values))
 					$values = array($values);
 
-				throw new RecordNotFound("Couldn't find $class with ID=" . join(',',$values));
+				//throw new RecordNotFound("Couldn't find $class with ID=" . join(',',$values));
+				return NULL;
 			}
 
 			$values = join(',',$values);
-			throw new RecordNotFound("Couldn't find all $class with IDs ($values) (found $results, but was looking for $expected)");
+			//throw new RecordNotFound("Couldn't find all $class with IDs ($values) (found $results, but was looking for $expected)");
 		}
 		return $expected == 1 ? $list[0] : $list;
 	}
