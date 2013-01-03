@@ -1,5 +1,47 @@
 # PHP ActiveRecord #
 
+## Changes in eriktorsner's repo ##
+
+I've forked PHP ActiveRecord to be able to fix few itches.
+- Always return a collection of records for a query. 
+- A fix needed to access properties from Twig
+- An entrypoint for CodeIgniter
+
+To use in CodeIgniter 2.1.x or later:
+- Download and unpack into application/third-party
+- Enable hooks in application/config/config.php
+- Add the code below hook in application/config/hooks.php
+
+Example application/config/hooks.php:
+
+	<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+	/*
+	| -------------------------------------------------------------------------
+	| Hooks
+	| -------------------------------------------------------------------------
+	| This file lets you define "hooks" to extend CI without hacking the core
+	| files.  Please see the user guide for info:
+	|
+	|	http://codeigniter.com/user_guide/general/hooks.html
+	|
+	*/
+
+	echo "In config/hooks.php\n";
+
+	$hook['pre_controller'][] = array(
+	    'class'    => '',
+	    'function' => 'initialize_php_activerecord',
+	    'filename' => 'CI_ActiveRecord.php',
+	    'filepath' => 'third_party/php-activerecord'                                
+	);
+
+
+
+	/* End of file hooks.php */
+	/* Location: ./application/config/hooks.php */
+
+## Version etc. ##
+
 Version 1.0
 
 by Kien La and Jacques Fuentes
