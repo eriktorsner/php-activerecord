@@ -1,4 +1,5 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
 function initialize_php_activerecord()
 {
 	if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50300)
@@ -9,24 +10,41 @@ function initialize_php_activerecord()
 	if (!defined('PHP_ACTIVERECORD_AUTOLOAD_PREPEND'))
 		define('PHP_ACTIVERECORD_AUTOLOAD_PREPEND',true);
 
-	//require 'lib/Singleton.php';
-	//require 'lib/Config.php';
-	//require 'lib/Utils.php';
-	//require 'lib/DateTime.php';
-	//require 'lib/Model.php';
-	//require 'lib/Table.php';
-	//require 'lib/ConnectionManager.php';
-	//require 'lib/Connection.php';
-	//require 'lib/SQLBuilder.php';
-	//require 'lib/Reflections.php';
-	//require 'lib/Inflector.php';
-	//require 'lib/CallBack.php';
-	//require 'lib/Exceptions.php';
-	//require 'lib/Cache.php';
-
 	if (!defined('PHP_ACTIVERECORD_AUTOLOAD_DISABLE'))
-		spl_autoload_register('activerecord_autoload',
-			false,PHP_ACTIVERECORD_AUTOLOAD_PREPEND);
+	{
+		spl_autoload_register('activerecord_autoload',false,PHP_ACTIVERECORD_AUTOLOAD_PREPEND);
+		spl_autoload_register('activerecord_lib_autoload', false, PHP_ACTIVERECORD_AUTOLOAD_PREPEND);
+	}
+
+	// The Utils.php file has some namespaced procedural functions, so we must require it manually.
+	require 'lib/Utils'.EXT;
+	require 'lib/Exceptions.php';
+
+	// Include the CodeIgniter database config so we can access the variables declared within
+	include(APPPATH.'config/database'.EXT);
+
+	$dsn = array();
+	if ($db) 
+	{
+		foreach ($db as $name => $db_values) 
+		{
+			// Convert to dsn format
+			$dsn[$name] = $db[$name]['dbdriver'] .
+			'://'   . $db[$name]['username'] .
+			':'     . $db[$name]['password'] .
+			'@'     . $db[$name]['hostname'] .
+			'/'     . $db[$name]['database'] .
+			';charset=' . $db[$name]['char_set'];
+		}
+	} 
+
+	// Initialize ActiveRecord
+	ActiveRecord\Config::initialize(function($cfg) use ($dsn, $active_group)
+	{
+		$cfg->set_model_directory(APPPATH.'models');
+		$cfg->set_connections($dsn);
+		$cfg->set_default_connection($active_group);
+	});
 }
 
 function activerecord_autoload($class_name)
@@ -47,7 +65,19 @@ function activerecord_autoload($class_name)
 
 	$file = "$root/$class_name.php";
 
-	if (file_exists($file))
-		require $file;
+	if (file_exists($file)) require $file;
 }
+
+function activerecord_lib_autoload($class_name)
+{
+	$lib_path = APPPATH.'third_party/php-activerecord/lib/';
+
+	if (strpos($class_name, 'ActiveRecord') !== FALSE) 
+	{
+		$class = substr($class_name, strpos($class_name, '\\')+1);
+
+		if (file_exists($lib_path.$class.EXT)) require $lib_path.$class.EXT;
+	}
+}
+
 
